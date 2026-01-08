@@ -1,0 +1,12 @@
+{
+  "ConnectionStrings": {
+    "DataBaseConnection": "Server=172.21.10.240;Initial Catalog=SIME_MS_Electronic_Service;User ID=AdminBackend;Password=3FsQUs6BHfxlTDYkYIY5;Encrypt=False;TrustServerCertificate=False;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
