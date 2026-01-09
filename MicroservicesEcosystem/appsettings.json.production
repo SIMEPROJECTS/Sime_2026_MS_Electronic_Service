@@ -8,5 +8,9 @@
       "Microsoft.AspNetCore": "Warning"
     }
   },
-  "AllowedHosts": "*"
+  "AllowedHosts": "*",
+  "OTPKey": "eec7094e-0e57-4d58-8431-adcc9ceead83",
+  "MS_Internal": {
+    "CUriMessages": "http://messages.ironsale"
+  }
 }

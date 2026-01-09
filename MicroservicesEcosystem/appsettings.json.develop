@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "DataBaseConnection": "Server=172.17.42.35;Initial Catalog=SIME_MS_Identity_Managment;User ID=devusersim;Password=kljasuñl56$%.*;Encrypt=False;TrustServerCertificate=False;"
+    "DataBaseConnection": "Server=172.17.42.35;Initial Catalog=SIME_MS_Electronic_Service;User ID=devusersim;Password=kljasuñl56$%.*;Encrypt=False;TrustServerCertificate=False;"
   },
   "Logging": {
     "LogLevel": {
@@ -8,5 +8,9 @@
       "Microsoft.AspNetCore": "Warning"
     }
   },
-  "AllowedHosts": "*"
+  "AllowedHosts": "*",
+  "OTPKey": "eec7094e-0e57-4d58-8431-adcc9ceead83",
+  "MS_Internal": {
+    "CUriMessages": "http://messages.ironsale"
+  }
 }

@@ -1,6 +1,8 @@
-﻿namespace MicroservicesEcosystem.Repositories.Interfaces
+﻿using MicroservicesEcosystem.Models;
+
+namespace MicroservicesEcosystem.Repositories.Interfaces
 {
-    public interface ITokenValidationRepository
+    public interface ITokenValidationRepository : IRepository<TokenValidation>
     {
     }
 }

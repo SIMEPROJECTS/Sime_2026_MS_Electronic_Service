@@ -4,6 +4,9 @@ namespace MicroservicesEcosystem.Exceptions
 {
     public class Errors
     {
+        public const string OtpInvalido = "OTP no válido";
+        public const string TokenExpirado = "Token OTP caducado";
+        public const string TokenInvalido = "Token OTP no válido";
         public const string NoProductInKardex = "El producto no se encuentra en el registro";
         public const string KardexNotFound = "No existe un registro de kardex";
         public const string OrderAtendNotFound = "No existe esa orden de atencion";

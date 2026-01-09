@@ -1,5 +1,8 @@
 ﻿
 
+using MicroservicesEcosystem.Authentication;
+using MicroservicesEcosystem.Clients.Internal;
+using MicroservicesEcosystem.Clients.Internal.Interface;
 using MicroservicesEcosystem.Repositories;
 using MicroservicesEcosystem.Repositories.Interfaces;
 using MicroservicesEcosystem.Services;
@@ -13,7 +16,7 @@ namespace MicroservicesEcosystem.DependyInjection
         {
             services.AddScoped<ITokenValidationRepository, TokenValidationRepository>();
             services.AddScoped<ITokenValidationService, TokenValidationService>();
-
+            services.AddScoped<IMSMessagesClient, MSMessagesClient>();            
         }
     }
 }
