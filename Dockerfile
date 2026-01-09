@@ -1,35 +1,25 @@
-# Etapa de build
+# Utiliza el SDK de .NET 8.0 para la etapa de construcción
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /source
 
-# Copiar solución y proyectos
+# Copia los archivos de proyecto y restaura las dependencias
 COPY *.sln .
 COPY MicroservicesEcosystem/*.csproj ./MicroservicesEcosystem/
+RUN dotnet restore -r linux-x64
 
-# Restaurar dependencias
-RUN dotnet restore *.sln -r linux-x64
-
-# Copiar el resto del código
+# Copia el resto de los archivos y construye la aplicación
 COPY MicroservicesEcosystem/. ./MicroservicesEcosystem/
-
-# Publicar
 WORKDIR /source/MicroservicesEcosystem
-RUN dotnet publish \
-    -c Release \
-    -o /app/publish \
-    -r linux-x64 \
-    --self-contained false \
-    --no-restore
+RUN dotnet publish -c Release -o /app -r linux-x64 --self-contained false --no-restore
 
-# Etapa runtime
+# Etapa final, utiliza la imagen de ASP.NET Core Runtime 8.0
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
+
 ENV TZ=America/Guayaquil
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
  && echo $TZ > /etc/timezone
-
+ 
 WORKDIR /app
 EXPOSE 80
-
-COPY --from=build /app/publish .
-
-ENTRYPOINT ["dotnet", "MicroservicesEcosystem.dll"]
+COPY --from=build /app ./
+ENTRYPOINT ["./MicroservicesEcosystem"]
