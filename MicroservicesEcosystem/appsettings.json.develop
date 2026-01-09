@@ -12,6 +12,7 @@
   "OTPKey": "eec7094e-0e57-4d58-8431-adcc9ceead83",
   "MS_Internal": {
     "CUriMessages": "http://messages.ironsale",
-    "CUriBusiness": "http://business.ironsale"
+    "CUriBusiness": "http://business.ironsale",
+    "CuriIdentity": "http://identity.ironsale"
   }
 }
