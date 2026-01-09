@@ -11,8 +11,6 @@ using MicroservicesEcosystem.Types;
 using Microsoft.AspNetCore.Mvc;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Net.NetworkInformation;
-using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -25,14 +23,16 @@ namespace MicroservicesEcosystem.Services
         private readonly IConfiguration configuration;
         private readonly IDocumentRepository documentRepository;
         private readonly IMSIdentityClient mSIdentityClient;
+        private readonly ISignatureRepository signatureRepository;
         public SignService(ITokenValidationService tokenValidationService, ITokenValidationRepository tokenValidationRepository, IConfiguration configuration,
-            IDocumentRepository documentRepository, IMSIdentityClient mSIdentityClient)
+            IDocumentRepository documentRepository, IMSIdentityClient mSIdentityClient, ISignatureRepository signatureRepository)
         {
             this.tokenValidationService = tokenValidationService;
             this.tokenValidationRepository = tokenValidationRepository;
             this.configuration = configuration;
             this.documentRepository = documentRepository;
             this.mSIdentityClient = mSIdentityClient;
+            this.signatureRepository = signatureRepository;
         }
 
         public async Task<IActionResult> CreateFormDocument(DocumentRequest documentRequest)
@@ -53,21 +53,29 @@ namespace MicroservicesEcosystem.Services
 
         public async Task<IActionResult> SignPatientForm(SignRequest signRequest)
         {
+            await documentRepository.BeginTransactionAsync();
             TokenValidation tokenValidation = await tokenValidationRepository.GetTokenValidationByOrderAttentionId(int.Parse(signRequest.orderAttentionId));
             if (tokenValidation == null) throw new ArgumentException(Errors.TokenValidationNotFound.ToString());
             List<Document> documents = await documentRepository.GetDocumentsByTokenValidationId(tokenValidation.Id);
-            OtpGenerator otpGenerator = new OtpGenerator();
-            otpGenerator.Otp = signRequest.otp;
-            otpGenerator.token = tokenValidation.TokenValue;
-            await tokenValidationService.ValidarOTP(otpGenerator);
-
-            foreach(var document in documents)
+            var verification = BCrypt.Net.BCrypt.Verify(signRequest.otp, tokenValidation.TokenValue);
+            if (!verification) throw new ArgumentException(Errors.InvalidOTP.ToString());
+            var posiciones = new List<(float X, float Y)>();
+            foreach (var document in documents)
             {
                 byte[] pdfBytes;
                 using (var http = new HttpClient())
                     pdfBytes = await http.GetByteArrayAsync(document.FileUrl);
 
-                byte[] pdfFirmado = SignPatient(pdfBytes, tokenValidation.Name, new List<(float X, float Y)> { (270, 140) }, false, signRequest.orderAttentionId);
+                if(document.Type == "AIG")
+                {
+                    posiciones = new List<(float X, float Y)>{(275f, 175f)};
+                }
+                else
+                {
+                    posiciones = new List<(float X, float Y)>{(130f, 400f), (120f, 30f) };
+                }
+                string QrContent = $"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now()}";
+                    byte[] pdfFirmado = SignPatient(pdfBytes, tokenValidation.Name, posiciones, false, signRequest.orderAttentionId);
 
                 string pdfBase64 = Convert.ToBase64String(pdfFirmado);
                 FileUploadRequest fileUploadRequest = new FileUploadRequest
@@ -77,6 +85,14 @@ namespace MicroservicesEcosystem.Services
                     Base64File = pdfBase64,
                 };
                 await mSIdentityClient.postFile(fileUploadRequest);
+                document.Status = TypeStatus.SIGNED.ToString();
+                document.SignedAt = DateTime.Now;
+                await documentRepository.Update(document);
+                Signature signature = new Signature(document, QrContent);
+                signature.Type = TypeStatus.SIMPLE.ToString();
+                signature.DeviceInfo = "";
+                await signatureRepository.Add(signature);
+                await documentRepository.CommitTransactionAsync();
             }
             return await Task.FromResult(new OkObjectResult(new { Status = TypeStatus.SUCCESS.ToString() }));
         }
@@ -112,12 +128,12 @@ namespace MicroservicesEcosystem.Services
             }
         }
 
-        private byte[] SignPatient(byte[] pdfBytes, string nombreFirmante, List<(float X, float Y)> posiciones, bool firmarTodasPaginas, string idOrdenAtencion)
+        private byte[] SignPatient(byte[] pdfBytes, string nombreFirmante, List<(float X, float Y)> posiciones, bool firmarTodasPaginas, string qrContent)
         {
             using (var pdfStream = new MemoryStream(pdfBytes))
             using (var outputStream = new MemoryStream())
             {
-                PdfReader reader = new PdfReader(pdfStream);
+                PdfReader reader = new PdfReader(pdfStream, new ReaderProperties());
                 PdfWriter writer = new PdfWriter(outputStream);
                 PdfDocument pdfDoc = new PdfDocument(reader, writer);
 
@@ -126,8 +142,6 @@ namespace MicroservicesEcosystem.Services
                 // Obtenemos la fecha actual una sola vez para que coincida en el QR y el texto
                 var fechaActual = DateTime.Now; // O usa LocalDateTimeNow.Now() si es tu clase personalizada
 
-                // Texto del QR (Mantenemos tu lógica)
-                string qrContent = $"Verificado por SIME - {idOrdenAtencion} - {LocalDateTimeNow.Now()}";
 
                 // --- Generación del QR (Igual que antes) ---
                 var barcodeWriter = new ZXing.BarcodeWriterPixelData

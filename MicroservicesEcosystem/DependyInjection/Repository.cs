@@ -22,6 +22,7 @@ namespace MicroservicesEcosystem.DependyInjection
             services.AddScoped<ISignService, SignService>();
             services.AddScoped<IDocumentRepository, DocumentRepository>();
             services.AddScoped<IMSIdentityClient, MsIdentityClient>();
+            services.AddScoped<ISignatureRepository, SignatureRepository>();
         }
     }
 }
