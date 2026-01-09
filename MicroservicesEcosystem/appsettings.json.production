@@ -11,6 +11,7 @@
   "AllowedHosts": "*",
   "OTPKey": "eec7094e-0e57-4d58-8431-adcc9ceead83",
   "MS_Internal": {
-    "CUriMessages": "http://messages.ironsale"
+    "CUriMessages": "http://messages.ironsale",
+    "CUriBusiness": "http://business.ironsale"
   }
 }

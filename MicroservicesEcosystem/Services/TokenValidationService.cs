@@ -20,13 +20,59 @@ namespace MicroservicesEcosystem.Services
         private readonly IConfiguration configuration;
         private readonly IMSMessagesClient mSMessagesClient;
         private readonly IJwtAuthenticationManager jwtAuthenticationManager;
-        public TokenValidationService(ITokenValidationRepository tokenValidationRepository, IConfiguration configuration, IMSMessagesClient mSMessagesClient, IJwtAuthenticationManager jwtAuthenticationManager)
+        private readonly IMSBusinessClient mSBusinessClient;
+        public TokenValidationService(ITokenValidationRepository tokenValidationRepository, IConfiguration configuration, IMSMessagesClient mSMessagesClient,
+            IJwtAuthenticationManager jwtAuthenticationManager, IMSBusinessClient mSBusinessClient)
         {
             this.tokenValidationRepository = tokenValidationRepository;
             this.configuration = configuration;
             this.mSMessagesClient = mSMessagesClient;
-            this.jwtAuthenticationManager = jwtAuthenticationManager; 
+            this.jwtAuthenticationManager = jwtAuthenticationManager;
+            this.mSBusinessClient = mSBusinessClient;
         }
+
+        public async Task<IActionResult> PostOTPInsurance(OtpRequestSmsEmailMessage otpRequestMessage)
+        {
+            OtpGenerator generator = new OtpGenerator();
+            long count = generator.RandomNumber();
+            string otp = generator.GenerateOTP(configuration["OTPKey"], count, 4);
+            BusinessRequestInfo gcAseguradora = await mSBusinessClient.getBusinessInformation(otpRequestMessage.Broker);
+            if (gcAseguradora == null) throw new ArgumentException(Errors.ErrorNoAseguradora.ToString());
+            if (gcAseguradora.Id != Guid.Parse("ad056d97-02f1-4e6a-2e3a-08de470075f6") && gcAseguradora.Id != Guid.Parse("785c723c-6f37-41ce-3eb9-08de38d1a349")) throw new ArgumentException("Aseguradora no es AIG");
+            TokenValidation tokenValidation = new TokenValidation();
+            tokenValidation.Type = otpRequestMessage.Type != null ? otpRequestMessage.Type : "N/A";
+            tokenValidation.TokenValue = BCrypt.Net.BCrypt.HashPassword(otp);
+            tokenValidation.Status = TypeStatus.NOENVIADO.ToString();
+            tokenValidation.CreatedAt = DateTime.Now;
+            tokenValidation.ExpiresAt = DateTime.Now;
+            tokenValidation.MsMedicalRecordOrderAttentionCode = otpRequestMessage.OrderAttentionId != null ? otpRequestMessage.OrderAttentionId : null;
+            tokenValidation.Name = otpRequestMessage.Name;
+            tokenValidation.Dni = otpRequestMessage.Dni;
+            tokenValidation.Phone = otpRequestMessage.Phone;
+            tokenValidation.Email = "N/A";
+            tokenValidation = await tokenValidationRepository.Add(tokenValidation);
+            TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id);
+            tokenValidation.ExpiresAt = response.ExpiresIn;
+            tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+            SendSmsMessageRequest sendSmsMessageRequest = new SendSmsMessageRequest();
+            sendSmsMessageRequest.Name = otpRequestMessage.Name;
+            sendSmsMessageRequest.Otp = otp;
+            sendSmsMessageRequest.Dni = otpRequestMessage.Dni;
+            sendSmsMessageRequest.Broker = gcAseguradora.Name;
+            sendSmsMessageRequest.TemplateId = Guid.Parse("0c32def4-3cf1-41f5-b220-8770c3f70934");
+            sendSmsMessageRequest.Phone = otpRequestMessage.Phone;
+            sendSmsMessageRequest.Email = "";
+            await mSMessagesClient.postEnvioOTPSmsMessage(sendSmsMessageRequest);
+            sendSmsMessageRequest.TemplateId = Guid.Parse("0bb060b7-7c2a-486e-9805-59cdf8756137");
+            sendSmsMessageRequest.Email = otpRequestMessage.Email;
+            sendSmsMessageRequest.Phone = "";
+            await mSMessagesClient.postEnvioOTPEmailMessage(sendSmsMessageRequest);
+            tokenValidation.Status = TypeStatus.ENVIADO.ToString();
+            tokenValidation.UpdatedAt = DateTime.Now;
+            tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+            return await Task.FromResult(new OkObjectResult(new { valueOtp = otp, tokenOTP = response.AccessToken, expiresIn = response.ExpiresIn }));
+        }
+
         public async Task<IActionResult> GetOTPPhone(OtpRequestSmsMessage otpRequestMessage)
         {
             OtpGenerator generator = new OtpGenerator();

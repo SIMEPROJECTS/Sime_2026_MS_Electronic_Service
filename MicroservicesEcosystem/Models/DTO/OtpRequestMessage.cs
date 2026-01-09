@@ -24,6 +24,8 @@
         public string Name { get; set; }
         public string Phone { get; set; }
         public string Email { get; set; }
-        public int Broker { get; set; }
+        public Guid Broker { get; set; }
+        public int? OrderAttentionId { get; set; }
+        public string? Type { get; set; }
     }
 }

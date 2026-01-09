@@ -18,5 +18,31 @@ namespace MicroservicesEcosystem.Clients.Internal
             var jsonData = JsonConvert.SerializeObject(sendEmailCategory, Formatting.Indented);
             await MakeRequest(this.HttpClient, UrlClients.postEnvioOTPEmailMessagepPortal, HttpMethod.Post, jsonData);
         }
+        public async Task postEnvioOTPSmsMessage(SendSmsMessageRequest sendEmailCategory)
+        {
+            var jsonData = JsonConvert.SerializeObject(sendEmailCategory, Formatting.Indented);
+            try
+            {
+                await MakeRequest(this.HttpClient, UrlClients.postEnvioOTPSmsMessage, HttpMethod.Post, jsonData);
+            }
+            catch (Exception ex)
+            {
+                //OJO Agregar logs de error 
+            }
+
+        }
+        public async Task postEnvioOTPEmailMessage(SendSmsMessageRequest sendEmailCategory)
+        {
+            var jsonData = JsonConvert.SerializeObject(sendEmailCategory, Formatting.Indented);
+            try
+            {
+                await MakeRequest(this.HttpClient, UrlClients.postEnvioOTPEmailMessage, HttpMethod.Post, jsonData);
+            }
+            catch (Exception ex)
+            {
+                //OJO Agregar logs de error
+            }
+
+        }
     }
 }

@@ -4,6 +4,7 @@ namespace MicroservicesEcosystem.Exceptions
 {
     public class Errors
     {
+        public const string ErrorNoAseguradora = "No se encontro la aseguradora";
         public const string OtpInvalido = "OTP no válido";
         public const string TokenExpirado = "Token OTP caducado";
         public const string TokenInvalido = "Token OTP no válido";

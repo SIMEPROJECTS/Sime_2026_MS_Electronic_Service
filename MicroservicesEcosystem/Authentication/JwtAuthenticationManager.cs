@@ -45,33 +45,6 @@ namespace MicroservicesEcosystem.Authentication
             TokenResponse tokenResponse = new TokenResponse(tokenHandler.WriteToken(token), expire, tokenType);
             return tokenResponse;
         }
-        public TokenResponse AuthenticateOTPInsurance(string otp)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var tokenType = "";
-            var expire = DateTime.UtcNow.AddHours(2);
-            var tokenKey = Encoding.ASCII.GetBytes(key);
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-
-                Claims = new Dictionary<string, object> {
-                    { "otp", otp },
-
-                },
-                Subject = new ClaimsIdentity(new Claim[] {
-                     new Claim(ClaimTypes.AuthenticationMethod,"OTP"),
-                }),
-
-                TokenType = tokenType,
-                Expires = expire,
-                SigningCredentials =
-                    new SigningCredentials(
-                        new SymmetricSecurityKey(tokenKey),
-                        SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            TokenResponse tokenResponse = new TokenResponse(tokenHandler.WriteToken(token), expire, tokenType);
-            return tokenResponse;
-        }
+     
     }
 }

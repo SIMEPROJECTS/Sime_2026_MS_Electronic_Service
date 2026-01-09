@@ -31,6 +31,11 @@ namespace MicroservicesEcosystem.Controllers
         {
             return await tokenValidationService.GetOTPEmail(otpRequestMessage);
         }
+        [HttpPost("otp/business")]
+        public async Task<IActionResult> PostOTPInsurance([FromBody] OtpRequestSmsEmailMessage otpRequestMessage)
+        {
+            return await tokenValidationService.PostOTPInsurance(otpRequestMessage);
+        }
 
         [HttpPost("otp/validate")]
         public async Task<IActionResult> ValidarOTP([FromBody] OtpGenerator otpGenerator)

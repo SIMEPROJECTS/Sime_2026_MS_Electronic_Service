@@ -2,6 +2,47 @@
 
 namespace MicroservicesEcosystem.Clients.Models
 {
+
+    public class BusinessRequestInfo
+    {
+        public Guid Id { get; set; }
+        public string Ruc { get; set; }
+        public string Name { get; set; }
+        public string Address { get; set; }
+        public string Phone { get; set; }
+        public string Status { get; set; }
+        public string? Observation { get; set; }
+        public string EmailLegalRepresentative { get; set; }
+        public Guid IdDynamics { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public AgreementRequestInfo AgreementRequestInfo { get; set; }
+    }
+    public class AgreementRequestInfo
+    {
+        public Guid Id { get; set; }
+        public int TimeCredit { get; set; }
+        public DateOnly StartDate { get; set; }
+        public DateOnly EndDate { get; set; }
+        public int ResultsDeliveryTime { get; set; }
+        public string TypeResultsDelivery { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public List<AgreementCityRequestInfo>? AgreementCityRequestInfo { get; set; }
+        public List<MedicalCheckRequesInfo>? MedicalCheckRequesInfos { get; set; }
+    }
+
+    public class AgreementCityRequestInfo
+    {
+        public Guid Id { get; set; }
+        public int CityId { get; set; }
+        public string Name { get; set; }
+        public DateTime? CreatedAt { get; set; }
+    }
+    public class MedicalCheckRequesInfo
+    {
+        public Guid Id { get; set; }
+        public string? Name { get; set; }
+    }
     public class SendEmailMessageOTPRequest
     {
         public string Dni { get; set; }

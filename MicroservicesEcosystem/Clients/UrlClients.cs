@@ -3,8 +3,8 @@
 namespace MicroservicesEcosystem.Clients
 {
     public class UrlClients
-    {      
-
+    {
+        public const string getBusinesinformation = "/api/business/information";
         public const string postEnvioOTPMessagePayment = "/api/messages/sms/otp/payment";
         public const string postEnvioOTPSmsMessage = "/api/messages/sms/otp";
         public const string postEnvioOTPEmailMessage = "/api/messages/email/otp";

@@ -5,6 +5,7 @@ namespace MicroservicesEcosystem.Services.Interfaces
 {
     public interface ITokenValidationService
     {
+        Task<IActionResult> PostOTPInsurance(OtpRequestSmsEmailMessage otpRequestMessage);
         Task<IActionResult> GetOTPPhone(OtpRequestSmsMessage otpRequestMessage);
         Task<IActionResult> ValidarOTP(OtpGenerator otpGenerator);
         Task<IActionResult> GetOTPEmail(OtpRequestMessage otpRequestMessage);

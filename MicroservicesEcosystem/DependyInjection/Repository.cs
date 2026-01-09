@@ -14,6 +14,7 @@ namespace MicroservicesEcosystem.DependyInjection
     {
         public static void Inject(IServiceCollection services)
         {
+            services.AddScoped<IMSBusinessClient, MSBusinessClient>();
             services.AddScoped<ITokenValidationRepository, TokenValidationRepository>();
             services.AddScoped<ITokenValidationService, TokenValidationService>();
             services.AddScoped<IMSMessagesClient, MSMessagesClient>();            
