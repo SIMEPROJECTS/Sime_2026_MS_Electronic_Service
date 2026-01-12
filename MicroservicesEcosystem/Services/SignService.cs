@@ -47,12 +47,12 @@ namespace MicroservicesEcosystem.Services
 
         public async Task<IActionResult> CreateFormDocument(DocumentRequest documentRequest)
         {
-            TokenValidation tokenValidation = await tokenValidationRepository.GetTokenValidationByOrderAttentionId(int.Parse(documentRequest.idOrderAttention));
+            TokenValidation tokenValidation = await tokenValidationRepository.GetTokenValidationByOrderAttentionId(int.Parse(documentRequest.orderAttentionId));
             if (tokenValidation == null) throw new ArgumentException(Errors.TokenValidationNotFound.ToString());
             Document document = new Document();
             document.Id = Guid.NewGuid();
             document.Type = documentRequest.type;
-            document.FileUrl = configuration["MS_Internal:CUriIdentity"] + $"/api/user/medicalrecords/multimedia/fichasMedicas/formularios/F_{documentRequest.idOrderAttention}_M.pdf";
+            document.FileUrl = configuration["MS_Internal:CUriIdentity"] + $"/api/user/medicalrecords/multimedia/fichasMedicas/formularios/F_{documentRequest.orderAttentionId}_M.pdf";
             document.Hash = await GetHashFromUrl(document.FileUrl);
             document.CreatedAt = DateTime.Now;
             document.Status = TypeStatus.PENDING.ToString();
