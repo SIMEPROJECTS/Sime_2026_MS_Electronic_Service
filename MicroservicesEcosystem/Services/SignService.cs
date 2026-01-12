@@ -192,8 +192,8 @@ namespace MicroservicesEcosystem.Services
                 Format = BarcodeFormat.QR_CODE,
                 Options = new EncodingOptions
                 {
-                    Height = 110,
-                    Width = 110,
+                    Height = 100,
+                    Width = 100,
                     Margin = 0
                 }
             };
