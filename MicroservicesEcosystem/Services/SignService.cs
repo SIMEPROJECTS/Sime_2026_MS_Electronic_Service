@@ -94,8 +94,7 @@ namespace MicroservicesEcosystem.Services
                             ? new() { (275f, 175f) }
                             : new() { (130f, 400f), (120f, 30f) };
 
-                    string qrContent =
-                        $"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now()}";
+                    string qrContent = $"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now()} -- " + BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now()}");
 
                     byte[] pdfFirmado = SignPatient(
                         pdfBytes,
@@ -119,6 +118,7 @@ namespace MicroservicesEcosystem.Services
                     document.FileUrl = configuration["MS_Internal:CUriIdentity"] +
                                        $"/api/user/medicalrecords/multimedia/fichasMedicas/formularios/F_{signRequest.orderAttentionId}_A.pdf";
                     document.Hash = await GetHashFromUrl(document.FileUrl);
+
                     await documentRepository.Update(document);
 
                     var signature = new Signature(document, qrContent)
@@ -192,8 +192,8 @@ namespace MicroservicesEcosystem.Services
                 Format = BarcodeFormat.QR_CODE,
                 Options = new EncodingOptions
                 {
-                    Height = 150,
-                    Width = 150,
+                    Height = 110,
+                    Width = 110,
                     Margin = 0
                 }
             };
