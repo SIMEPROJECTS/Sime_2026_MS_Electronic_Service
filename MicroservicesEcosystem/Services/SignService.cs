@@ -52,7 +52,7 @@ namespace MicroservicesEcosystem.Services
             Document document = new Document();
             document.Id = Guid.NewGuid();
             document.Type = documentRequest.type;
-            document.FileUrl = configuration["UrlFiles"] + $"/api/user/medicalrecords/multimedia/fichasMedicas/formularios/F_{documentRequest.idOrderAttention}_M.pdf";
+            document.FileUrl = configuration["MS_Internal:CUriIdentity"] + $"/api/user/medicalrecords/multimedia/fichasMedicas/formularios/F_{documentRequest.idOrderAttention}_M.pdf";
             document.Hash = await GetHashFromUrl(document.FileUrl);
             document.CreatedAt = DateTime.Now;
             document.Status = TypeStatus.PENDING.ToString();
