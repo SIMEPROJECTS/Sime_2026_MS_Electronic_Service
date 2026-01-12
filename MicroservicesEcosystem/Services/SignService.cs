@@ -116,6 +116,9 @@ namespace MicroservicesEcosystem.Services
 
                     document.Status = TypeStatus.SIGNED.ToString();
                     document.SignedAt = DateTime.Now;
+                    document.FileUrl = configuration["MS_Internal:CUriIdentity"] +
+                                       $"/api/user/medicalrecords/multimedia/fichasMedicas/formularios/F_{signRequest.orderAttentionId}_A.pdf";
+                    document.Hash = await GetHashFromUrl(document.FileUrl);
                     await documentRepository.Update(document);
 
                     var signature = new Signature(document, qrContent)
