@@ -261,8 +261,8 @@ namespace MicroservicesEcosystem.Services
                         .SetFixedPosition(pageNum, posX, posY + 5, 200);
 
                     var qrImage = new Image(ImageDataFactory.Create(qrBytes))
-                        .ScaleAbsolute(35, 35)
-                        .SetFixedPosition(pageNum, posX - 55, posY);
+                        .ScaleAbsolute(40, 40)
+                        .SetFixedPosition(pageNum, posX - 30, posY + 10);
 
                     canvas.Add(texto);
                     canvas.Add(qrImage);
