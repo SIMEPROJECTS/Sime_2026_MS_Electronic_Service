@@ -83,14 +83,11 @@ namespace MicroservicesEcosystem.Services
                 {
                     using var response = await httpClient.GetAsync(
                         document.FileUrl,
-                        HttpCompletionOption.ResponseHeadersRead);
+                        HttpCompletionOption.ResponseContentRead);
 
                     response.EnsureSuccessStatusCode();
 
-                    await using var pdfStream = await response.Content.ReadAsStreamAsync();
-                    using var ms = new MemoryStream();
-                    await pdfStream.CopyToAsync(ms);
-                    byte[] pdfBytes = ms.ToArray();
+                    byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
 
                     List<(float X, float Y)> posiciones =
                         document.Type == "AIG"
@@ -129,6 +126,7 @@ namespace MicroservicesEcosystem.Services
 
                     await signatureRepository.Add(signature);
                 }
+
                 await documentRepository.CommitTransactionAsync();
 
                 return new OkObjectResult(new { Status = TypeStatus.SUCCESS.ToString() });
