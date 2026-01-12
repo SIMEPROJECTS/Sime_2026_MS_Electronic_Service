@@ -11,7 +11,10 @@ namespace MicroservicesEcosystem.Types
         ENVIADO,
         SUCCESS,
         USADO,
-        EXPIRADO
+        EXPIRADO,
+        PENDING,
+        SIGNED,
+        SIMPLE
 
 
     }

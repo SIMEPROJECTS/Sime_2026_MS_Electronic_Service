@@ -4,5 +4,6 @@ namespace MicroservicesEcosystem.Repositories.Interfaces
 {
     public interface ITokenValidationRepository : IRepository<TokenValidation>
     {
+        public Task<TokenValidation> GetTokenValidationByOrderAttentionId(int orderAttentionId);
     }
 }

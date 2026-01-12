@@ -9,5 +9,6 @@ namespace MicroservicesEcosystem.Clients
         public const string postEnvioOTPSmsMessage = "/api/messages/sms/otp";
         public const string postEnvioOTPEmailMessage = "/api/messages/email/otp";
         public const string postEnvioOTPEmailMessagepPortal = "/api/messages/email/otp/portal";
+        public const string postFile = "/api/user/file/upload";
     }
 }

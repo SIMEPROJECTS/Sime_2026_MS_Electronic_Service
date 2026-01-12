@@ -36,5 +36,15 @@ namespace MicroservicesEcosystem.Models
 
         [Column("updated_at")]
         public DateTime? UpdatedAt { get; set; }
+
+        public Signature () { }
+
+        public Signature(Document document, string qrContent)
+        {
+            this.Id = Guid.NewGuid();
+            this.CreatedAt = DateTime.Now;
+            this.Data = qrContent;
+            this.DocumentId = document.Id;
+        }
     }
 }

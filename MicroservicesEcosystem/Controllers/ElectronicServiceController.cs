@@ -14,10 +14,13 @@ namespace MicroservicesEcosystem.Controllers
     {
 
         private readonly ITokenValidationService tokenValidationService;
+        private readonly ISignService signService;
 
-        public ElectronicServiceController(ITokenValidationService tokenValidationService)
+        public ElectronicServiceController(ITokenValidationService tokenValidationService,
+            ISignService signService)
         {
             this.tokenValidationService  = tokenValidationService;
+            this.signService = signService;
         }
 
         [HttpPost("otp/phone")]
@@ -41,7 +44,18 @@ namespace MicroservicesEcosystem.Controllers
         public async Task<IActionResult> ValidarOTP([FromBody] OtpGenerator otpGenerator)
         {
             return await tokenValidationService.ValidarOTP(otpGenerator);
-        }       
+        }
 
+        [HttpPost("form/document")]
+        public async Task<IActionResult> CreateFormDocument([FromBody] DocumentRequest documentRequest)
+        {
+            return await signService.CreateFormDocument(documentRequest);
+        }
+
+        [HttpPost("form/sign/document")]
+        public async Task<IActionResult> SignFormDocument([FromBody] SignRequest signRequest)
+        {
+            return await signService.SignPatientForm(signRequest);
+        }
     }
 }
