@@ -13,6 +13,6 @@
   "MS_Internal": {
     "CUriMessages": "http://messages.ironsale",
     "CUriBusiness": "http://business.ironsale",
-    "CuriIdentity": "http://identity.ironsale"
+    "CUriIdentity": "http://identity.ironsale"
   }
 }
