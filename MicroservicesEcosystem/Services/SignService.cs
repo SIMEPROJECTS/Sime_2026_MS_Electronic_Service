@@ -1,5 +1,7 @@
 ﻿using iText.IO.Image;
 using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
 using MicroservicesEcosystem.Client.Internal.Interfaces;
 using MicroservicesEcosystem.CustomDataTime;
 using MicroservicesEcosystem.Exceptions;
@@ -9,10 +11,15 @@ using MicroservicesEcosystem.Repositories.Interfaces;
 using MicroservicesEcosystem.Services.Interfaces;
 using MicroservicesEcosystem.Types;
 using Microsoft.AspNetCore.Mvc;
-using System.Drawing;
-using System.Drawing.Imaging;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
 using System.Security.Cryptography;
 using System.Text;
+using ZXing;
+using ZXing.Common;
+using Document = MicroservicesEcosystem.Models.Document;
+using Image = iText.Layout.Element.Image;
 
 namespace MicroservicesEcosystem.Services
 {
@@ -130,94 +137,105 @@ namespace MicroservicesEcosystem.Services
 
         private byte[] SignPatient(byte[] pdfBytes, string nombreFirmante, List<(float X, float Y)> posiciones, bool firmarTodasPaginas, string qrContent)
         {
-            using (var pdfStream = new MemoryStream(pdfBytes))
-            using (var outputStream = new MemoryStream())
+            using var pdfStream = new MemoryStream(pdfBytes);
+            using var outputStream = new MemoryStream();
+
+            var reader = new PdfReader(pdfStream);
+            var writer = new PdfWriter(outputStream);
+            var pdfDoc = new PdfDocument(reader, writer);
+
+            int totalPages = pdfDoc.GetNumberOfPages();
+            var fechaActual = DateTime.Now;
+
+            // ======================================================
+            // 🔹 GENERAR QR SIN System.Drawing (MULTIPLATAFORMA)
+            // ======================================================
+            var qrWriter = new ZXing.BarcodeWriterPixelData
             {
-                PdfReader reader = new PdfReader(pdfStream, new ReaderProperties());
-                PdfWriter writer = new PdfWriter(outputStream);
-                PdfDocument pdfDoc = new PdfDocument(reader, writer);
-
-                int totalPages = pdfDoc.GetNumberOfPages();
-
-                // Obtenemos la fecha actual una sola vez para que coincida en el QR y el texto
-                var fechaActual = DateTime.Now; // O usa LocalDateTimeNow.Now() si es tu clase personalizada
-
-
-                // --- Generación del QR (Igual que antes) ---
-                var barcodeWriter = new ZXing.BarcodeWriterPixelData
+                Format = BarcodeFormat.QR_CODE,
+                Options = new EncodingOptions
                 {
-                    Format = ZXing.BarcodeFormat.QR_CODE,
-                    Options = new ZXing.Common.EncodingOptions
+                    Height = 150,
+                    Width = 150,
+                    Margin = 0
+                }
+            };
+
+            var pixelData = qrWriter.Write(qrContent);
+
+            byte[] qrBytes;
+            using (var qrStream = new MemoryStream())
+            using (var image = new Image<Rgba32>(pixelData.Width, pixelData.Height))
+            {
+                int index = 0;
+
+                image.ProcessPixelRows(accessor =>
+                {
+                    for (int y = 0; y < accessor.Height; y++)
                     {
-                        Height = 85,
-                        Width = 85,
-                        Margin = 0
+                        var row = accessor.GetRowSpan(y);
+                        for (int x = 0; x < row.Length; x++)
+                        {
+                            row[x] = new Rgba32(
+                                pixelData.Pixels[index + 2], // R
+                                pixelData.Pixels[index + 1], // G
+                                pixelData.Pixels[index],     // B
+                                pixelData.Pixels[index + 3]  // A
+                            );
+                            index += 4;
+                        }
                     }
-                };
+                });
 
-                var pixelData = barcodeWriter.Write(qrContent);
-                using var qrBitmap = new Bitmap(pixelData.Width, pixelData.Height, PixelFormat.Format32bppArgb);
-                var bitmapData = qrBitmap.LockBits(new Rectangle(0, 0, qrBitmap.Width, qrBitmap.Height), ImageLockMode.WriteOnly, qrBitmap.PixelFormat);
-                try
-                {
-                    System.Runtime.InteropServices.Marshal.Copy(pixelData.Pixels, 0, bitmapData.Scan0, pixelData.Pixels.Length);
-                }
-                finally
-                {
-                    qrBitmap.UnlockBits(bitmapData);
-                }
-
-                using var msQr = new MemoryStream();
-                qrBitmap.Save(msQr, ImageFormat.Png);
-                byte[] qrBytes = msQr.ToArray();
-                // ------------------------------------------
-
-                // Definir qué páginas se firman
-                var paginasAFirmar = new List<int>();
-                if (firmarTodasPaginas)
-                {
-                    for (int i = 1; i <= totalPages; i++) paginasAFirmar.Add(i);
-                }
-                else
-                {
-                    paginasAFirmar.Add(totalPages); // Solo la última
-                }
-
-                // Iterar sobre las páginas seleccionadas
-                foreach (int pageNum in paginasAFirmar)
-                {
-                    PdfPage page = pdfDoc.GetPage(pageNum);
-                    var pdfCanvas = new iText.Kernel.Pdf.Canvas.PdfCanvas(page);
-                    var canvas = new iText.Layout.Canvas(pdfCanvas, page.GetPageSize());
-
-                    foreach (var (posX, posY) in posiciones)
-                    {
-                        // 1. Crear el bloque de TEXTO (Nombre, Fecha, Mensaje)
-                        // Usamos Paragraph para manejar saltos de línea
-                        string textoFirma = $"{nombreFirmante}\n{fechaActual:dd/MM/yyyy HH:mm}\nVerificado por SIME";
-
-                        var parrafoFirma = new iText.Layout.Element.Paragraph(textoFirma)
-                            .SetFontSize(8) // Tamaño pequeño para que parezca firma/sello
-                            .SetFixedPosition(pageNum, posX, posY + 5, 200); // 200 es el ancho máximo de la caja de texto
-
-                        // 2. Crear la imagen del QR
-                        var qrImg = new iText.Layout.Element.Image(ImageDataFactory.Create(qrBytes))
-                            .ScaleAbsolute(50, 50)
-                            // Ajustamos la posición del QR. 
-                            // Nota: Si quieres el QR a la IZQUIERDA del texto, restamos a X.
-                            // Si el texto empieza en posX, el QR lo ponemos un poco antes.
-                            .SetFixedPosition(pageNum, posX - 55, posY);
-
-                        canvas.Add(parrafoFirma);
-                        canvas.Add(qrImg);
-                    }
-
-                    canvas.Close();
-                }
-
-                pdfDoc.Close();
-                return outputStream.ToArray();
+                image.Save(qrStream, new PngEncoder());
+                qrBytes = qrStream.ToArray();
             }
+
+            // ======================================================
+            // 🔹 DEFINIR PÁGINAS A FIRMAR
+            // ======================================================
+            var paginasAFirmar = new List<int>();
+            if (firmarTodasPaginas)
+            {
+                for (int i = 1; i <= totalPages; i++)
+                    paginasAFirmar.Add(i);
+            }
+            else
+            {
+                paginasAFirmar.Add(totalPages);
+            }
+
+            // ======================================================
+            // 🔹 INSERTAR FIRMA + TEXTO + QR
+            // ======================================================
+            foreach (int pageNum in paginasAFirmar)
+            {
+                var page = pdfDoc.GetPage(pageNum);
+                var pdfCanvas = new iText.Kernel.Pdf.Canvas.PdfCanvas(page);
+                var canvas = new Canvas(pdfCanvas, page.GetPageSize());
+
+                foreach (var (posX, posY) in posiciones)
+                {
+                    string textoFirma =
+                        $"{nombreFirmante}\n{fechaActual:dd/MM/yyyy HH:mm}\nVerificado por SIME";
+
+                    var texto = new Paragraph(textoFirma)
+                        .SetFontSize(8)
+                        .SetFixedPosition(pageNum, posX, posY + 5, 200);
+
+                    var qrImage = new Image(ImageDataFactory.Create(qrBytes))
+                        .ScaleAbsolute(50, 50)
+                        .SetFixedPosition(pageNum, posX - 55, posY);
+
+                    canvas.Add(texto);
+                    canvas.Add(qrImage);
+                }
+
+                canvas.Close();
+            }
+
+            pdfDoc.Close();
+            return outputStream.ToArray();
         }
     }
 }
