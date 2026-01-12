@@ -3,9 +3,8 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /source
 
 # Copia los archivos de proyecto y restaura las dependencias
-COPY *.sln .
 COPY MicroservicesEcosystem/*.csproj ./MicroservicesEcosystem/
-RUN dotnet restore -r linux-x64
+RUN dotnet restore MicroservicesEcosystem/*.csproj -r linux-x64
 
 # Copia el resto de los archivos y construye la aplicación
 COPY MicroservicesEcosystem/. ./MicroservicesEcosystem/
@@ -22,4 +21,6 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
 WORKDIR /app
 EXPOSE 80
 COPY --from=build /app ./
-ENTRYPOINT ["./MicroservicesEcosystem"]
+
+# 🔴 ESTE ES EL OTRO CAMBIO NECESARIO
+ENTRYPOINT ["dotnet", "MicroservicesEcosystem.dll"]

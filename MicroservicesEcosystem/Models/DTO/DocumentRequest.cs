@@ -2,7 +2,7 @@
 {
     public class DocumentRequest
     {
-        public string idOrderAttention { get; set; } 
+        public string orderAttentionId { get; set; } 
         public string type { get; set; }
     }
 }
