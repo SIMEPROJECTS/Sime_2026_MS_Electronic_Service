@@ -14,5 +14,6 @@
     "CUriMessages": "http://messages.ironsale",
     "CUriBusiness": "http://business.ironsale",
     "CUriIdentity": "http://identity.ironsale"
-  }
+  },
+  "UrlFiles": "http://portalsalud.sime.com.ec:8082"
 }

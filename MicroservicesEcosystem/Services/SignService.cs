@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using ZXing;
@@ -31,8 +32,9 @@ namespace MicroservicesEcosystem.Services
         private readonly IDocumentRepository documentRepository;
         private readonly IMSIdentityClient mSIdentityClient;
         private readonly ISignatureRepository signatureRepository;
+        private readonly HttpClient httpClient;
         public SignService(ITokenValidationService tokenValidationService, ITokenValidationRepository tokenValidationRepository, IConfiguration configuration,
-            IDocumentRepository documentRepository, IMSIdentityClient mSIdentityClient, ISignatureRepository signatureRepository)
+            IDocumentRepository documentRepository, IMSIdentityClient mSIdentityClient, ISignatureRepository signatureRepository, HttpClient httpClient)
         {
             this.tokenValidationService = tokenValidationService;
             this.tokenValidationRepository = tokenValidationRepository;
@@ -40,6 +42,7 @@ namespace MicroservicesEcosystem.Services
             this.documentRepository = documentRepository;
             this.mSIdentityClient = mSIdentityClient;
             this.signatureRepository = signatureRepository;
+            this.httpClient = httpClient;
         }
 
         public async Task<IActionResult> CreateFormDocument(DocumentRequest documentRequest)
@@ -49,7 +52,7 @@ namespace MicroservicesEcosystem.Services
             Document document = new Document();
             document.Id = Guid.NewGuid();
             document.Type = documentRequest.type;
-            document.FileUrl = configuration["MS_Internal:CuriIdentity"] + $"/api/user/medicalrecords/multimedia/fichasMedicas/formularios/F_{documentRequest.idOrderAttention}_M.pdf";
+            document.FileUrl = configuration["UrlFiles"] + $"/api/user/medicalrecords/multimedia/fichasMedicas/formularios/F_{documentRequest.idOrderAttention}_M.pdf";
             document.Hash = await GetHashFromUrl(document.FileUrl);
             document.CreatedAt = DateTime.Now;
             document.Status = TypeStatus.PENDING.ToString();
@@ -61,47 +64,80 @@ namespace MicroservicesEcosystem.Services
         public async Task<IActionResult> SignPatientForm(SignRequest signRequest)
         {
             await documentRepository.BeginTransactionAsync();
-            TokenValidation tokenValidation = await tokenValidationRepository.GetTokenValidationByOrderAttentionId(int.Parse(signRequest.orderAttentionId));
-            if (tokenValidation == null) throw new ArgumentException(Errors.TokenValidationNotFound.ToString());
-            List<Document> documents = await documentRepository.GetDocumentsByTokenValidationId(tokenValidation.Id);
-            var verification = BCrypt.Net.BCrypt.Verify(signRequest.otp, tokenValidation.TokenValue);
-            if (!verification) throw new ArgumentException(Errors.InvalidOTP.ToString());
-            var posiciones = new List<(float X, float Y)>();
-            foreach (var document in documents)
+            try
             {
-                byte[] pdfBytes;
-                using (var http = new HttpClient())
-                    pdfBytes = await http.GetByteArrayAsync(document.FileUrl);
+                TokenValidation tokenValidation =
+                    await tokenValidationRepository.GetTokenValidationByOrderAttentionId(
+                        int.Parse(signRequest.orderAttentionId));
 
-                if(document.Type == "AIG")
-                {
-                    posiciones = new List<(float X, float Y)>{(275f, 175f)};
-                }
-                else
-                {
-                    posiciones = new List<(float X, float Y)>{(130f, 400f), (120f, 30f) };
-                }
-                string QrContent = $"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now()}";
-                    byte[] pdfFirmado = SignPatient(pdfBytes, tokenValidation.Name, posiciones, false, signRequest.orderAttentionId);
+                if (tokenValidation == null)
+                    throw new ArgumentException(Errors.TokenValidationNotFound.ToString());
 
-                string pdfBase64 = Convert.ToBase64String(pdfFirmado);
-                FileUploadRequest fileUploadRequest = new FileUploadRequest
+                if (!BCrypt.Net.BCrypt.Verify(signRequest.otp, tokenValidation.TokenValue))
+                    throw new ArgumentException(Errors.InvalidOTP.ToString());
+
+                List<Document> documents =
+                    await documentRepository.GetDocumentsByTokenValidationId(tokenValidation.Id);
+
+                foreach (var document in documents)
                 {
-                    ContainerName = "medicalrecords",
-                    FileName = $"multimedia/fichasMedicas/formularios/F_{signRequest.orderAttentionId}_A.pdf",
-                    Base64File = pdfBase64,
-                };
-                await mSIdentityClient.postFile(fileUploadRequest);
-                document.Status = TypeStatus.SIGNED.ToString();
-                document.SignedAt = DateTime.Now;
-                await documentRepository.Update(document);
-                Signature signature = new Signature(document, QrContent);
-                signature.Type = TypeStatus.SIMPLE.ToString();
-                signature.DeviceInfo = "";
-                await signatureRepository.Add(signature);
+                    using var response = await httpClient.GetAsync(
+                        document.FileUrl,
+                        HttpCompletionOption.ResponseHeadersRead);
+
+                    response.EnsureSuccessStatusCode();
+
+                    await using var pdfStream = await response.Content.ReadAsStreamAsync();
+                    using var ms = new MemoryStream();
+                    await pdfStream.CopyToAsync(ms);
+                    byte[] pdfBytes = ms.ToArray();
+
+                    List<(float X, float Y)> posiciones =
+                        document.Type == "AIG"
+                            ? new() { (275f, 175f) }
+                            : new() { (130f, 400f), (120f, 30f) };
+
+                    string qrContent =
+                        $"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now()}";
+
+                    byte[] pdfFirmado = SignPatient(
+                        pdfBytes,
+                        tokenValidation.Name,
+                        posiciones,
+                        false,
+                        signRequest.orderAttentionId);
+
+                    var fileUploadRequest = new FileUploadRequest
+                    {
+                        ContainerName = "medicalrecords",
+                        FileName =
+                            $"multimedia/fichasMedicas/formularios/F_{signRequest.orderAttentionId}_A.pdf",
+                        Base64File = Convert.ToBase64String(pdfFirmado)
+                    };
+
+                    await mSIdentityClient.postFile(fileUploadRequest);
+
+                    document.Status = TypeStatus.SIGNED.ToString();
+                    document.SignedAt = DateTime.Now;
+                    await documentRepository.Update(document);
+
+                    var signature = new Signature(document, qrContent)
+                    {
+                        Type = TypeStatus.SIMPLE.ToString(),
+                        DeviceInfo = ""
+                    };
+
+                    await signatureRepository.Add(signature);
+                }
                 await documentRepository.CommitTransactionAsync();
+
+                return new OkObjectResult(new { Status = TypeStatus.SUCCESS.ToString() });
             }
-            return await Task.FromResult(new OkObjectResult(new { Status = TypeStatus.SUCCESS.ToString() }));
+            catch
+            {
+                await documentRepository.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public static async Task<string> GetHashFromUrl(string url)
