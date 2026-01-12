@@ -93,7 +93,7 @@ namespace MicroservicesEcosystem.Services
                     {
                         [document.Type == "AIG" ? 1 : 1] =
                             document.Type == "AIG"
-                        ? new() { (275f, 175f) }
+                        ? new() { (175f, 30f) }
                         : new() { (130f, 400f), (120f, 30f) }
                     };
 
@@ -103,7 +103,7 @@ namespace MicroservicesEcosystem.Services
                         pdfBytes,
                         tokenValidation.Name,
                         firmasPorPagina,
-                        signRequest.orderAttentionId);
+                        qrContent);
 
                     var fileUploadRequest = new FileUploadRequest
                     {
