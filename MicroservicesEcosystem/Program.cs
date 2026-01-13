@@ -2,6 +2,7 @@ using MicroservicesEcosystem.Authentication;
 using MicroservicesEcosystem.DependyInjection;
 using MicroservicesEcosystem.Exceptions;
 using MicroservicesEcosystem.Models;
+using MicroservicesEcosystem.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -39,6 +40,11 @@ builder.Services.AddDbContext<EcosystemBaseDbContext>(options =>
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(80); // Escuchar en el puerto 80 en todas las interfaces
+});
+
+builder.Services.AddHttpClient<SignService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(5);
 });
 Repository.Inject(builder.Services);
 var app = builder.Build();
