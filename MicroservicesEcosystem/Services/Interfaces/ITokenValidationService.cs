@@ -9,5 +9,6 @@ namespace MicroservicesEcosystem.Services.Interfaces
         Task<IActionResult> GetOTPPhone(OtpRequestSmsMessage otpRequestMessage);
         Task<IActionResult> ValidarOTP(OtpGenerator otpGenerator);
         Task<IActionResult> GetOTPEmail(OtpRequestMessage otpRequestMessage);
+        Task<IActionResult> ValidarOTPOrder(OtpGeneratorOrder otpGenerator);
     }
 }

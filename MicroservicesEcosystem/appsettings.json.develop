@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "DataBaseConnection": "Server=172.17.42.35;Initial Catalog=SIME_MS_Electronic_Service;User ID=devusersim;Password=kljasuñl56$%.*;Encrypt=False;TrustServerCertificate=False;"
+    "DataBaseConnection": "Server=172.17.42.36;Initial Catalog=SIME_MS_Electronic_Service;User ID=devusersim;Password=kljasuñl56$%.*;Encrypt=False;TrustServerCertificate=False;"
   },
   "Logging": {
     "LogLevel": {

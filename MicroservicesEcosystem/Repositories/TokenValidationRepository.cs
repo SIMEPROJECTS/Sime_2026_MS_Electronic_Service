@@ -14,9 +14,11 @@ namespace MicroservicesEcosystem.Repositories
         public async Task<TokenValidation> GetTokenValidationByOrderAttentionId(int orderAttentionId)
         {
             var result = await (from db in context.Set<TokenValidation>()
-                                where db.MsMedicalRecordOrderAttentionCode == orderAttentionId & db.Status == TypeStatus.USADO.ToString()
+                                where db.MsMedicalRecordOrderAttentionCode == orderAttentionId & (db.Status == TypeStatus.USADO.ToString() || db.Status == TypeStatus.ENVIADO.ToString())
                                 select db).FirstOrDefaultAsync();
             return result;
         }
+
+       
     }
 }

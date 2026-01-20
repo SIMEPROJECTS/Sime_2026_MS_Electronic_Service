@@ -11,6 +11,7 @@ using MicroservicesEcosystem.Types;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
+using static MicroservicesEcosystem.Models.DTO.OtpGenerator;
 
 namespace MicroservicesEcosystem.Services
 {
@@ -53,6 +54,7 @@ namespace MicroservicesEcosystem.Services
             tokenValidation = await tokenValidationRepository.Add(tokenValidation);
             TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id);
             tokenValidation.ExpiresAt = response.ExpiresIn;
+            tokenValidation.Token = response.AccessToken;
             tokenValidation = await tokenValidationRepository.Update(tokenValidation);
             SendSmsMessageRequest sendSmsMessageRequest = new SendSmsMessageRequest();
             sendSmsMessageRequest.Name = otpRequestMessage.Name;
@@ -92,6 +94,7 @@ namespace MicroservicesEcosystem.Services
             tokenValidation = await tokenValidationRepository.Add(tokenValidation);
             TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id);
             tokenValidation.ExpiresAt = response.ExpiresIn;
+            tokenValidation.Token = response.AccessToken;
             tokenValidation = await tokenValidationRepository.Update(tokenValidation);
             SendSmsMessageRequest sendSmsMessageRequest = new SendSmsMessageRequest(otpRequestMessage, otp, Guid.Parse("d67e35f6-72f6-40bc-b3ea-b83de3bf87e3"));
             await mSMessagesClient.postEnvioOTPSmsMessage(sendSmsMessageRequest);
@@ -119,6 +122,7 @@ namespace MicroservicesEcosystem.Services
             tokenValidation = await tokenValidationRepository.Add(tokenValidation);
             TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id);
             tokenValidation.ExpiresAt = response.ExpiresIn;
+            tokenValidation.Token = response.AccessToken;
             tokenValidation = await tokenValidationRepository.Update(tokenValidation);
             SendEmailMessageOTPRequest sendSmsMessageRequest = new SendEmailMessageOTPRequest(otpRequestMessage, otp);
             await mSMessagesClient.postEnvioOTPEmailPortalMessage(sendSmsMessageRequest);
@@ -174,6 +178,59 @@ namespace MicroservicesEcosystem.Services
 
         }
 
+        public async Task<IActionResult> ValidarOTPOrder(OtpGeneratorOrder otpGenerator)
+        {
+            TokenValidation tokenValidation = await tokenValidationRepository.GetTokenValidationByOrderAttentionId(otpGenerator.OrderCode);
+            if (tokenValidation == null) throw new ArgumentException("No se encontro ningun OTP con el código de orden");
+            if (tokenValidation.Token == null)
+            {
+                tokenValidation.Status = TypeStatus.EXPIRADO.ToString();
+                tokenValidation.UpdatedAt = DateTime.Now;
+                tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+                throw new ArgumentException("No se encontro ningun token");
+            }
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(tokenValidation.Token) as JwtSecurityToken;
+            if (jsonToken != null)
+            {
+                if (jsonToken.ValidTo < DateTime.UtcNow)
+                {                   
+                    tokenValidation.Status = TypeStatus.EXPIRADO.ToString();
+                    tokenValidation.UpdatedAt = DateTime.Now;
+                    tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+                    throw new ArgumentException(Errors.TokenExpirado.ToString());
+                }
+                else
+                {
+                    if(tokenValidation.Status == TypeStatus.USADO.ToString())
+                    {  
+                        tokenValidation.Status = TypeStatus.USADO.ToString();
+                        tokenValidation.UpdatedAt = DateTime.Now;
+                        tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+                    }
+                    else
+                    {
+                        if (otpGenerator.Otp == null) throw new ArgumentException("Es neceseario ingresar el OTP.");
+                        OtpGenerator generator = new OtpGenerator();
+                        Boolean successLogin = otpGenerator.VerifyPassword(otpGenerator.Otp, tokenValidation.TokenValue);
+                        if (!successLogin) throw new ArgumentException(Errors.OtpInvalido.ToString());
+                        tokenValidation.Status = TypeStatus.USADO.ToString();
+                        tokenValidation.UpdatedAt = DateTime.Now;
+                        tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+                    }
+          
+                        return await Task.FromResult(new OkObjectResult(new { Status = TypeStatus.SUCCESS.ToString() }));
+                   
+                }
+
+            }
+            else
+            {
+                throw new ArgumentException(Errors.TokenInvalido.ToString());
+            }
+            throw new ArgumentException(Errors.TokenInvalido.ToString());
+
+        }
 
     }
 }

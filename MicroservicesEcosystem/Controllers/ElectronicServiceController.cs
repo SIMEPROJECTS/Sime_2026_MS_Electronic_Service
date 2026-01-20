@@ -46,6 +46,12 @@ namespace MicroservicesEcosystem.Controllers
             return await tokenValidationService.ValidarOTP(otpGenerator);
         }
 
+        [HttpPost("otp/validate/order-attention")]
+        public async Task<IActionResult> ValidarOTPOrder([FromBody] OtpGeneratorOrder otpGenerator)
+        {
+            return await tokenValidationService.ValidarOTPOrder(otpGenerator);
+        }
+
         [HttpPost("form/document")]
         public async Task<IActionResult> CreateFormDocument([FromBody] DocumentRequest documentRequest)
         {

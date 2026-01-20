@@ -31,6 +31,8 @@ namespace MicroservicesEcosystem.Models.DTO
                 return otp;
             }
         }
+
+       
         public bool ValidateOTP(string key, long counter, string otp)
         {
             string generatedOTP = GenerateOTP(key, counter, otp.Length);
@@ -55,4 +57,15 @@ namespace MicroservicesEcosystem.Models.DTO
             return rn;
         }
     }
+    public class OtpGeneratorOrder
+    {
+        public string? Otp { get; set; }
+        public int OrderCode { get; set; }
+
+        public Boolean VerifyPassword(String passwordRequest, String password)
+        {
+            return BCrypt.Net.BCrypt.Verify(passwordRequest, password);
+        }
+    }
+
 }

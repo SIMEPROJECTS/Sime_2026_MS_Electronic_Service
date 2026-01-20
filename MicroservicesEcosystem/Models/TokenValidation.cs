@@ -53,5 +53,8 @@ namespace MicroservicesEcosystem.Models
         [Column("phone")]
         public string Phone { get; set; }
 
+        [Column("token")]
+        public string? Token { get; set; }
+
     }
 }
