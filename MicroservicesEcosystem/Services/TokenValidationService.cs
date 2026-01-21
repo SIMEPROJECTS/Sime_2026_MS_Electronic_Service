@@ -52,7 +52,7 @@ namespace MicroservicesEcosystem.Services
             tokenValidation.Phone = otpRequestMessage.Phone;
             tokenValidation.Email = "N/A";
             tokenValidation = await tokenValidationRepository.Add(tokenValidation);
-            TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id);
+            TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id, otp);
             tokenValidation.ExpiresAt = response.ExpiresIn;
             tokenValidation.Token = response.AccessToken;
             tokenValidation = await tokenValidationRepository.Update(tokenValidation);
@@ -92,7 +92,7 @@ namespace MicroservicesEcosystem.Services
             tokenValidation.Phone = otpRequestMessage.Phone;
             tokenValidation.Email = "N/A";
             tokenValidation = await tokenValidationRepository.Add(tokenValidation);
-            TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id);
+            TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id, otp);
             tokenValidation.ExpiresAt = response.ExpiresIn;
             tokenValidation.Token = response.AccessToken;
             tokenValidation = await tokenValidationRepository.Update(tokenValidation);
@@ -120,7 +120,7 @@ namespace MicroservicesEcosystem.Services
             tokenValidation.Email = otpRequestMessage.Email;
             tokenValidation.Phone = "N/A"; 
             tokenValidation = await tokenValidationRepository.Add(tokenValidation);
-            TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id);
+            TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id, otp);
             tokenValidation.ExpiresAt = response.ExpiresIn;
             tokenValidation.Token = response.AccessToken;
             tokenValidation = await tokenValidationRepository.Update(tokenValidation);

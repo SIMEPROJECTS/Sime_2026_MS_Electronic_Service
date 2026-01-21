@@ -6,7 +6,7 @@ namespace MicroservicesEcosystem.Authentication
 {
     public interface IJwtAuthenticationManager
     {   
-        TokenResponse AuthenticateOTP(Guid id);
+        TokenResponse AuthenticateOTP(Guid id, string otp);
 
     }
 }

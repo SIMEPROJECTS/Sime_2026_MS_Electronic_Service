@@ -17,7 +17,7 @@ namespace MicroservicesEcosystem.Authentication
             this.key = key;
         }
        
-        public TokenResponse AuthenticateOTP(Guid id)
+        public TokenResponse AuthenticateOTP(Guid id,string otp)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenType = "";
@@ -28,7 +28,8 @@ namespace MicroservicesEcosystem.Authentication
 
                 Claims = new Dictionary<string, object> {
                     { "id", id },
-                   
+                    { "otp", otp },
+
                 },
                 Subject = new ClaimsIdentity(new Claim[] {
                      new Claim(ClaimTypes.AuthenticationMethod,"OTP"),
