@@ -14,7 +14,10 @@ namespace MicroservicesEcosystem.Types
         EXPIRADO,
         PENDING,
         SIGNED,
-        SIMPLE
+        SIMPLE,
+        SIGN,
+        ACTIVO,
+        INACTIVO
 
 
     }

@@ -184,9 +184,6 @@ namespace MicroservicesEcosystem.Services
             using var pdfStream = new MemoryStream(pdfBytes);
             using var outputStream = new MemoryStream();
 
-            // ======================================================
-            // 🔹 PDF
-            // ======================================================
             var reader = new PdfReader(pdfStream);
             var writer = new PdfWriter(outputStream);
             var pdfDoc = new PdfDocument(reader, writer);
@@ -194,9 +191,6 @@ namespace MicroservicesEcosystem.Services
             int totalPages = pdfDoc.GetNumberOfPages();
             var fechaActual = DateTime.Now;
 
-            // ======================================================
-            // 🔹 GENERAR QR (MULTIPLATAFORMA)
-            // ======================================================
             var qrWriter = new ZXing.BarcodeWriterPixelData
             {
                 Format = ZXing.BarcodeFormat.QR_CODE,
@@ -240,9 +234,6 @@ namespace MicroservicesEcosystem.Services
                 qrBytes = qrStream.ToArray();
             }
 
-            // ======================================================
-            // 🔹 INSERTAR FIRMA + TEXTO + QR POR PÁGINA
-            // ======================================================
             foreach (var pagina in firmasPorPagina)
             {
                 int pageNum = pagina.Key;
@@ -279,5 +270,148 @@ namespace MicroservicesEcosystem.Services
             pdfDoc.Close();
             return outputStream.ToArray();
         }
+
+        private byte[] SignSingle(
+    byte[] pdfBytes,
+    string nombreFirmante,
+    int pageNum,
+    float posX,
+    float posY,
+    string qrContent)
+        {
+            using var pdfStream = new MemoryStream(pdfBytes);
+            using var outputStream = new MemoryStream();
+
+            var reader = new PdfReader(pdfStream);
+            var writer = new PdfWriter(outputStream);
+            var pdfDoc = new PdfDocument(reader, writer);
+
+            int totalPages = pdfDoc.GetNumberOfPages();
+            var fechaActual = DateTime.Now;
+
+            // 1. Generar el QR (Mantenemos tu lógica con ZXing e ImageSharp)
+            var qrWriter = new ZXing.BarcodeWriterPixelData
+            {
+                Format = ZXing.BarcodeFormat.QR_CODE,
+                Options = new ZXing.Common.EncodingOptions { Height = 100, Width = 100, Margin = 0 }
+            };
+
+            var pixelData = qrWriter.Write(qrContent);
+            byte[] qrBytes;
+
+            using (var qrStream = new MemoryStream())
+            using (var image = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(pixelData.Width, pixelData.Height))
+            {
+                int index = 0;
+                image.ProcessPixelRows(accessor => {
+                    for (int y = 0; y < accessor.Height; y++)
+                    {
+                        var row = accessor.GetRowSpan(y);
+                        for (int x = 0; x < row.Length; x++)
+                        {
+                            row[x] = new SixLabors.ImageSharp.PixelFormats.Rgba32(
+                                pixelData.Pixels[index + 2], pixelData.Pixels[index + 1],
+                                pixelData.Pixels[index], pixelData.Pixels[index + 3]);
+                            index += 4;
+                        }
+                    }
+                });
+                image.Save(qrStream, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+                qrBytes = qrStream.ToArray();
+            }
+
+            // 2. Estampar la firma en la página específica
+            if (pageNum >= 1 && pageNum <= totalPages)
+            {
+                var page = pdfDoc.GetPage(pageNum);
+                var pdfCanvas = new iText.Kernel.Pdf.Canvas.PdfCanvas(page);
+                var canvas = new iText.Layout.Canvas(pdfCanvas, page.GetPageSize());
+
+                string textoFirma = $"{nombreFirmante}\n{fechaActual:dd/MM/yyyy HH:mm}\nVerificado por SIME";
+
+                // Texto de la firma
+                var texto = new iText.Layout.Element.Paragraph(textoFirma)
+                    .SetFontSize(8)
+                    .SetFixedPosition(pageNum, posX, posY + 5, 200);
+
+                // Imagen QR
+                var qrImage = new iText.Layout.Element.Image(iText.IO.Image.ImageDataFactory.Create(qrBytes))
+                    .ScaleAbsolute(40, 40)
+                    .SetFixedPosition(pageNum, posX - 40, posY + 5);
+
+                canvas.Add(texto);
+                canvas.Add(qrImage);
+                canvas.Close();
+            }
+
+            pdfDoc.Close();
+            return outputStream.ToArray();
         }
+
+        public async Task<IActionResult> SignMedicalRecordDocument(MedicalRecordDocumentRequest medicalRecordDocumentRequest)
+        {
+            await tokenValidationRepository.BeginTransactionAsync();
+            try
+            {
+                TokenValidation tokenValidation = await tokenValidationRepository.GetTokenValidationByDni(medicalRecordDocumentRequest.Dni);
+                if (tokenValidation == null)
+                {
+                    tokenValidation = new TokenValidation(medicalRecordDocumentRequest);
+                    tokenValidation = await tokenValidationRepository.Add(tokenValidation);
+                } else if (tokenValidation.Status == TypeStatus.INACTIVO.ToString())
+                {
+                    throw new ArgumentException(Errors.InactiveSign.ToString());
+                }
+
+                foreach(var documentForSign in medicalRecordDocumentRequest.Documents) 
+                {
+                    //Guardar documentos
+                    Document document = new Document();
+                    document.Id = Guid.NewGuid();
+                    document.Type = TypeStatus.SIGN.ToString();
+                    document.FileUrl = documentForSign.FileUrl;
+                    document.Hash = await GetHashFromUrl(document.FileUrl);
+                    document.CreatedAt = DateTime.Now;
+                    document.TokenValidationId = tokenValidation.Id;
+                    document.Status = TypeStatus.PENDING.ToString();
+                    document = await documentRepository.Add(document);
+
+                    using var response = await httpClient.GetAsync(
+                                        document.FileUrl,
+                                        HttpCompletionOption.ResponseContentRead);
+
+                    response.EnsureSuccessStatusCode();
+
+                    byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
+
+                    byte[] pdfProcesado = pdfBytes;
+
+                    foreach (var sign in documentForSign.signPositions)
+                    {
+                        string qrContent = $"Verificado por SIME - {DateTime.Now} -- " +
+                                           BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {DateTime.Now}");
+
+                        pdfProcesado = SignSingle(
+                            pdfProcesado,
+                            tokenValidation.Name,
+                            sign.PageNumber,
+                            sign.X,
+                            sign.Y,
+                            qrContent);
+                    }
+
+
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                await tokenValidationRepository.RollbackTransactionAsync();
+            }
+           
+        }
+
+       
+    }
     }
