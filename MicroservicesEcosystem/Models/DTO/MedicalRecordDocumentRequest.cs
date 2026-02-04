@@ -4,14 +4,14 @@
     {
         public string Dni { get; set; }
         public string Email { get; set; }
-        public string PhoneNumber { get; set; }
+        public string Phone { get; set; }
         public string Name { get; set; }
         public List<DocumentSigns> Documents {  get; set; }
     }
 
     public class DocumentSigns
     {
-        public string FileUrl { get; set; }
+        public string filePath { get; set; }
         public List<SignPosition> signPositions { get; set; }
     }
 

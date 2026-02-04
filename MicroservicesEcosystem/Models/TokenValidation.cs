@@ -71,7 +71,7 @@ namespace MicroservicesEcosystem.Models
             this.Name = medicalRecordDocumentRequest.Name;
             this.Dni = medicalRecordDocumentRequest.Dni;
             this.Email = medicalRecordDocumentRequest.Email;
-            this.Phone = medicalRecordDocumentRequest.PhoneNumber;
+            this.Phone = medicalRecordDocumentRequest.Phone;
         }
     }
 }

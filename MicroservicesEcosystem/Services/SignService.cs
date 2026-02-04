@@ -369,7 +369,7 @@ namespace MicroservicesEcosystem.Services
                     Document document = new Document();
                     document.Id = Guid.NewGuid();
                     document.Type = TypeStatus.SIGN.ToString();
-                    document.FileUrl = documentForSign.FileUrl;
+                    document.FileUrl = configuration["MS_Internal:CUriIdentity"] + "/api/user/medicalrecords/" + documentForSign.filePath;
                     document.Hash = await GetHashFromUrl(document.FileUrl);
                     document.CreatedAt = DateTime.Now;
                     document.TokenValidationId = tokenValidation.Id;
@@ -398,20 +398,67 @@ namespace MicroservicesEcosystem.Services
                             sign.X,
                             sign.Y,
                             qrContent);
+
+                        var signature = new Signature(document, qrContent)
+                        {
+                            Type = TypeStatus.SIMPLE.ToString(),
+                            DeviceInfo = ""
+                        };
+
+                        await signatureRepository.Add(signature);
+                        await signatureRepository.SaveChangesAsync();
+
                     }
 
+                    document.Status = TypeStatus.SIGNED.ToString();
+                    document.SignedAt = DateTime.Now;
+                    document.Hash = GetPdfHash(pdfProcesado);
+
+                    var fileUploadRequest = new FileUploadRequest
+                    {
+                        ContainerName = "medicalrecords",
+                        FileName = documentForSign.filePath,
+                        Base64File = Convert.ToBase64String(pdfProcesado)
+                    };
+
+                    await mSIdentityClient.postFile(fileUploadRequest);
+
+                    await documentRepository.Update(document);
+                    await documentRepository.SaveChangesAsync();
 
                 }
 
-
+                await tokenValidationRepository.CommitTransactionAsync();
+                return new OkObjectResult(new { Status = TypeStatus.SUCCESS.ToString() });
             }
             catch (Exception ex)
             {
                 await tokenValidationRepository.RollbackTransactionAsync();
+                throw new ArgumentException(ex.Message);
             }
            
         }
 
-       
+        public string GetPdfHash(byte[] pdfBytes)
+        {
+            // Creamos la instancia del algoritmo SHA256
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                // Computamos el hash (esto devuelve un array de 32 bytes)
+                byte[] bytes = sha256Hash.ComputeHash(pdfBytes);
+
+                // Convertimos el array de bytes a una cadena hexadecimal legible
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2")); // "x2" formatea como hexadecimal
+                }
+                return builder.ToString();
+            }
+        }
+
     }
+
+
+
     }
