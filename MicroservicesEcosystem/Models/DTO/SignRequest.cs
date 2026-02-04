@@ -3,6 +3,6 @@
     public class SignRequest
     {
         public string otp { get; set; }
-        public string orderAttentionId { get; set; }
+        public string orderAttentionId { get; set; } //OrderAttentionCode in new system
     }
 }

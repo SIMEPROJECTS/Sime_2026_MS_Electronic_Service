@@ -11,6 +11,14 @@ namespace MicroservicesEcosystem.Repositories
         {
         }
 
+        public async Task<TokenValidation> GetTokenValidationByDni(string dni)
+        {
+            var result = await (from db in context.Set<TokenValidation>()
+                                where db.Dni == dni & db.Type == TypeStatus.SIGN.ToString()
+                                select db).FirstOrDefaultAsync();
+            return result;
+        }
+
         public async Task<TokenValidation> GetTokenValidationByOrderAttentionId(int orderAttentionId)
         {
             var result = await (from db in context.Set<TokenValidation>()

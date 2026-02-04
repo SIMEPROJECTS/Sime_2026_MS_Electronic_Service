@@ -1,4 +1,6 @@
-﻿using MicroservicesEcosystem.Repositories.Interfaces;
+﻿using MicroservicesEcosystem.Models.DTO;
+using MicroservicesEcosystem.Repositories.Interfaces;
+using MicroservicesEcosystem.Types;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -56,5 +58,20 @@ namespace MicroservicesEcosystem.Models
         [Column("token")]
         public string? Token { get; set; }
 
+        public TokenValidation() { }
+
+        public TokenValidation(MedicalRecordDocumentRequest medicalRecordDocumentRequest)
+        {
+            this.Id = Guid.NewGuid();
+            this.Type = TypeStatus.SIGN.ToString();
+            this.TokenValue = "N/A";
+            this.Status = TypeStatus.ACTIVO.ToString();
+            this.CreatedAt = DateTime.Now;
+            this.ExpiresAt = DateTime.MaxValue;
+            this.Name = medicalRecordDocumentRequest.Name;
+            this.Dni = medicalRecordDocumentRequest.Dni;
+            this.Email = medicalRecordDocumentRequest.Email;
+            this.Phone = medicalRecordDocumentRequest.Phone;
+        }
     }
 }

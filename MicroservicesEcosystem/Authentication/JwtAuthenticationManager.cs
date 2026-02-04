@@ -21,7 +21,7 @@ namespace MicroservicesEcosystem.Authentication
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenType = "";
-            var expire = DateTime.UtcNow.AddHours(5);
+            var expire = DateTime.UtcNow.AddHours(14);
             var tokenKey = Encoding.ASCII.GetBytes(key);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
