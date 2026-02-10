@@ -414,10 +414,17 @@ namespace MicroservicesEcosystem.Services
                     document.SignedAt = DateTime.Now;
                     document.Hash = GetPdfHash(pdfProcesado);
 
+                    string fileName = documentForSign.filePath;
+
+                    if (!string.IsNullOrEmpty(fileName) && fileName.Contains("F_") && fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        fileName = fileName.Replace(".pdf", "_M.pdf", StringComparison.OrdinalIgnoreCase);
+                    }
+
                     var fileUploadRequest = new FileUploadRequest
                     {
                         ContainerName = "medicalrecords",
-                        FileName = documentForSign.filePath,
+                        FileName = fileName,
                         Base64File = Convert.ToBase64String(pdfProcesado)
                     };
 
