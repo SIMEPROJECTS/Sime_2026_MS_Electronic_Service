@@ -464,6 +464,95 @@ namespace MicroservicesEcosystem.Services
             }
         }
 
+        public async Task<IActionResult> SignPatientFormV2(SignFormRequest signFormRequest)
+        {
+            await documentRepository.BeginTransactionAsync();
+            try
+            {
+                TokenValidation tokenValidation =
+                    await tokenValidationRepository.GetTokenValidationByOrderAttentionId(
+                        int.Parse(signFormRequest.OrderAttentionCode));
+
+                if (tokenValidation == null)
+                    throw new ArgumentException(Errors.TokenValidationNotFound.ToString());
+
+
+                Document document = new Document();
+                document.Id = Guid.NewGuid();
+                document.Type = TypeStatus.SIMPLE.ToString();
+                document.FileUrl = configuration["MS_Internal:CUriIdentity"] + "/api/user/medicalrecords/" + signFormRequest.Document.filePath;
+                document.Hash = await GetHashFromUrl(document.FileUrl);
+                document.CreatedAt = DateTime.Now;
+                document.Status = TypeStatus.PENDING.ToString();
+                document.TokenValidationId = tokenValidation.Id;
+                await documentRepository.Add(document);
+
+                using var response = await httpClient.GetAsync(
+                                        document.FileUrl,
+                                        HttpCompletionOption.ResponseContentRead);
+
+                response.EnsureSuccessStatusCode();
+
+                byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
+
+                byte[] pdfProcesado = pdfBytes;
+
+                foreach (var sign in signFormRequest.Document.signPositions)
+                {
+                    string qrContent = $"Verificado por SIME - {DateTime.Now} -- " +
+                                       BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {DateTime.Now}");
+
+                    pdfProcesado = SignSingle(
+                        pdfProcesado,
+                        tokenValidation.Name,
+                        sign.PageNumber,
+                        sign.X,
+                        sign.Y,
+                        qrContent);
+
+                    var signature = new Signature(document, qrContent)
+                    {
+                        Type = TypeStatus.SIMPLE.ToString(),
+                        DeviceInfo = ""
+                    };
+
+                    await signatureRepository.Add(signature);
+                    await signatureRepository.SaveChangesAsync();
+
+                }
+
+                document.Status = TypeStatus.SIGNED.ToString();
+                document.SignedAt = DateTime.Now;
+                document.Hash = GetPdfHash(pdfProcesado);
+
+                string fileName = signFormRequest.Document.filePath;
+
+                if (!string.IsNullOrEmpty(fileName) && fileName.Contains("F_") && fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                {
+                    fileName = fileName.Replace("_M.pdf", "_A.pdf", StringComparison.OrdinalIgnoreCase);
+                }
+
+                var fileUploadRequest = new FileUploadRequest
+                {
+                    ContainerName = "medicalrecords",
+                    FileName = fileName,
+                    Base64File = Convert.ToBase64String(pdfProcesado)
+                };
+
+                await mSIdentityClient.postFile(fileUploadRequest);
+                await documentRepository.Update(document);
+
+                await documentRepository.SaveChangesAsync();
+                await documentRepository.CommitTransactionAsync();
+
+                return new OkObjectResult(new { Status = TypeStatus.SUCCESS.ToString() });
+            }
+            catch
+            {
+                await documentRepository.RollbackTransactionAsync();
+                throw;
+            }
+        }
     }
 
 

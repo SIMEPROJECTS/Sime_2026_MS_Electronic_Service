@@ -9,6 +9,16 @@
         public List<DocumentSigns> Documents {  get; set; }
     }
 
+    public class SignFormRequest
+    {
+        public string Dni { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public string Name { get; set; }
+        public string OrderAttentionCode { get; set;  }
+        public DocumentSigns Document { get; set; }
+    }
+
     public class DocumentSigns
     {
         public string filePath { get; set; }
