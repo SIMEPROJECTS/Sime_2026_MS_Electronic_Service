@@ -10,6 +10,14 @@ namespace MicroservicesEcosystem.Repositories
         {
         }
 
+        public async Task<List<Document>> GetDocumentsByFilePath(string filePath)
+        {
+            var result = await (from db in context.Set<Document>()
+                                where db.FileUrl == filePath
+                                select db).ToListAsync();
+            return result;
+        }
+
         public async Task<List<Document>> GetDocumentsByTokenValidationId(Guid tokenValidationId)
         {
             var result = await (from db in context.Set<Document>()
