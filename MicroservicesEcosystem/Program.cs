@@ -1,6 +1,7 @@
 using MicroservicesEcosystem.Authentication;
 using MicroservicesEcosystem.DependyInjection;
 using MicroservicesEcosystem.Exceptions;
+using MicroservicesEcosystem.Middlewares;
 using MicroservicesEcosystem.Models;
 using MicroservicesEcosystem.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -55,7 +56,7 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
 }
 app.UseStaticFiles();
-
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseRouting();
 
 app.UseAuthorization();

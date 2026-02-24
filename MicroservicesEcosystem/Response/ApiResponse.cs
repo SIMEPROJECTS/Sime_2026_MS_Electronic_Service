@@ -25,6 +25,10 @@ namespace MicroservicesEcosystem.Response
         [JsonProperty(PropertyName = "path")]
         public string Path { get; set; }
 
+        [JsonProperty(PropertyName = "traceId")]
+        public string TraceId { get; set; }
+
+
         public ApiResponse(Exception exception, HttpStatusCode code)
         {
             this.Timestamp = LocalDateTimeNow.Now().ToString();
