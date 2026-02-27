@@ -46,6 +46,7 @@ namespace MicroservicesEcosystem.Exceptions
         public const string HashError = "Error al generar el hash del archivo.";
         public const string HttpError = "Error al descargar el archivo";
         public const string InvalidOTP = "OTP Incorrecto";
+        public const string InactiveSign = "La firma se encuentra inactiva";
 
         public static string BuildError(string error, params object[] args)
         {
