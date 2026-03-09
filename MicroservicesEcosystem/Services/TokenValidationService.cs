@@ -31,7 +31,57 @@ namespace MicroservicesEcosystem.Services
             this.jwtAuthenticationManager = jwtAuthenticationManager;
             this.mSBusinessClient = mSBusinessClient;
         }
-
+        public async Task<IActionResult> PostOTPPortal(OtpRequestEmailSmsMessage otpRequestMessage)
+        {
+            OtpGenerator generator = new OtpGenerator();
+            long count = generator.RandomNumber();
+            string otp = generator.GenerateOTP(configuration["OTPKey"], count, 4);
+            TokenValidation tokenValidation = new TokenValidation();
+            tokenValidation.Type = otpRequestMessage.Type != null ? otpRequestMessage.Type : "N/A";
+            tokenValidation.TokenValue = BCrypt.Net.BCrypt.HashPassword(otp);
+            tokenValidation.Status = TypeStatus.NOENVIADO.ToString();
+            tokenValidation.CreatedAt = DateTime.Now;
+            tokenValidation.ExpiresAt = DateTime.Now;
+            tokenValidation.MsMedicalRecordOrderAttentionCode = otpRequestMessage.OrderAttentionId != null ? otpRequestMessage.OrderAttentionId : null;
+            tokenValidation.Name = otpRequestMessage.Name;
+            tokenValidation.Dni = otpRequestMessage.Dni;
+            tokenValidation.Phone = otpRequestMessage.Phone;
+            tokenValidation.Email = "N/A";
+            tokenValidation = await tokenValidationRepository.Add(tokenValidation);
+            TokenResponse response = jwtAuthenticationManager.AuthenticateOTP(tokenValidation.Id, otp);
+            tokenValidation.ExpiresAt = response.ExpiresIn;
+            tokenValidation.Token = response.AccessToken;
+            tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+            tokenValidation.Status = TypeStatus.ENVIADO.ToString();
+            tokenValidation.UpdatedAt = DateTime.Now;
+            tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+            tokenValidation = new TokenValidation();
+            tokenValidation.Type = otpRequestMessage.Type != null ? otpRequestMessage.Type : "N/A";
+            tokenValidation.TokenValue = BCrypt.Net.BCrypt.HashPassword(otp);
+            tokenValidation.Status = TypeStatus.NOENVIADO.ToString();
+            tokenValidation.CreatedAt = DateTime.Now;
+            tokenValidation.ExpiresAt = DateTime.Now;
+            tokenValidation.MsMedicalRecordOrderAttentionCode = otpRequestMessage.OrderAttentionId != null ? otpRequestMessage.OrderAttentionId : null;
+            tokenValidation.Name = otpRequestMessage.Name;
+            tokenValidation.Dni = otpRequestMessage.Dni;
+            tokenValidation.Email = otpRequestMessage.Email;
+            tokenValidation.Phone = "N/A";
+            tokenValidation = await tokenValidationRepository.Add(tokenValidation);
+            tokenValidation.ExpiresAt = response.ExpiresIn;
+            tokenValidation.Token = response.AccessToken;
+            tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+            SendEmailMessageOTPPortalRequest sendSmsMessageRequestEmail = new SendEmailMessageOTPPortalRequest();
+            sendSmsMessageRequestEmail.Dni = otpRequestMessage.Dni;
+            sendSmsMessageRequestEmail.Name = otpRequestMessage.Name;
+            sendSmsMessageRequestEmail.Email = otpRequestMessage.Email;
+            sendSmsMessageRequestEmail.Phone = otpRequestMessage.Phone;
+            sendSmsMessageRequestEmail.Otp = otp;
+            await mSMessagesClient.postEnvioOTPEmailPortalMessages(sendSmsMessageRequestEmail);
+            tokenValidation.Status = TypeStatus.ENVIADO.ToString();
+            tokenValidation.UpdatedAt = DateTime.Now;
+            tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+            return await Task.FromResult(new OkObjectResult(new { tokenOTP = response.AccessToken, expiresIn = response.ExpiresIn }));
+        }
         public async Task<IActionResult> PostOTPInsurance(OtpRequestSmsEmailMessage otpRequestMessage)
         {
             OtpGenerator generator = new OtpGenerator();

@@ -43,6 +43,18 @@ namespace MicroservicesEcosystem.Clients.Models
         public Guid Id { get; set; }
         public string? Name { get; set; }
     }
+
+    public class SendEmailMessageOTPPortalRequest
+    {
+        public string Dni { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+
+        public string Phone { get; set; }
+        public string Otp { get; set; }
+
+    }
+
     public class SendEmailMessageOTPRequest
     {
         public string Dni { get; set; }
@@ -50,6 +62,15 @@ namespace MicroservicesEcosystem.Clients.Models
         public string Email { get; set; }
         public string Otp { get; set; }
         public SendEmailMessageOTPRequest(OtpRequestMessage otpRequestMessage, string otp)
+        {
+
+            Dni = otpRequestMessage.Dni;
+            Name = otpRequestMessage.Name;
+            Email = otpRequestMessage.Email;
+            Otp = otp;
+        }
+
+        public SendEmailMessageOTPRequest(OtpRequestEmailSmsMessage otpRequestMessage, string otp)
         {
 
             Dni = otpRequestMessage.Dni;
@@ -90,6 +111,16 @@ namespace MicroservicesEcosystem.Clients.Models
             Phone = "";
             Otp = otp;
         }
-      
+
+        public SendSmsMessageRequest(OtpRequestEmailSmsMessage otpRequestMessage, string otp, Guid templateId)
+        {
+            TemplateId = templateId;
+            Dni = otpRequestMessage.Dni;
+            Name = otpRequestMessage.Name;
+            Email = otpRequestMessage.Email;
+            Phone = "";
+            Otp = otp;
+        }
+
     }
 }

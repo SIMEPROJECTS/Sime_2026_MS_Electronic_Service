@@ -13,6 +13,14 @@ namespace MicroservicesEcosystem.Clients.Internal
 
 
         }
+
+        public async Task postEnvioOTPEmailPortalMessages(SendEmailMessageOTPPortalRequest sendEmailCategory)
+        {
+            var jsonData = JsonConvert.SerializeObject(sendEmailCategory, Formatting.Indented);
+            await MakeRequest(this.HttpClient, UrlClients.postEnvioOTPEmailMessagepPortals, HttpMethod.Post, jsonData);
+        }
+
+
         public async Task postEnvioOTPEmailPortalMessage(SendEmailMessageOTPRequest sendEmailCategory)
         {
             var jsonData = JsonConvert.SerializeObject(sendEmailCategory, Formatting.Indented);

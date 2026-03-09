@@ -23,6 +23,11 @@ namespace MicroservicesEcosystem.Controllers
             this.signService = signService;
         }
 
+        [HttpPost("otp/phone/email")]
+        public async Task<IActionResult> PostOTPPortal(OtpRequestEmailSmsMessage otpRequestMessage)
+        {
+            return await tokenValidationService.PostOTPPortal(otpRequestMessage);
+        }
         [HttpPost("otp/phone")]
         public async Task<IActionResult> GetOTPPhone([FromBody]  OtpRequestSmsMessage otpRequestMessage)
         {
