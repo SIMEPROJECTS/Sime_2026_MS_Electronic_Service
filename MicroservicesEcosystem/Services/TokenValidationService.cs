@@ -88,8 +88,11 @@ namespace MicroservicesEcosystem.Services
             long count = generator.RandomNumber();
             string otp = generator.GenerateOTP(configuration["OTPKey"], count, 4);
             BusinessRequestInfo gcAseguradora = await mSBusinessClient.getBusinessInformation(otpRequestMessage.Broker);
-            if (gcAseguradora == null) throw new ArgumentException(Errors.ErrorNoAseguradora.ToString());
-            if (gcAseguradora.Id != Guid.Parse("ad056d97-02f1-4e6a-2e3a-08de470075f6") && gcAseguradora.Id != Guid.Parse("785c723c-6f37-41ce-3eb9-08de38d1a349")) throw new ArgumentException("Aseguradora no es AIG");
+            if (otpRequestMessage.Broker != Guid.Parse("8AB0CB42-357F-4144-8E7A-39FD7423EAC7"))
+            {
+                if (gcAseguradora == null) throw new ArgumentException(Errors.ErrorNoAseguradora.ToString());
+            }
+            //if (gcAseguradora.Id != Guid.Parse("ad056d97-02f1-4e6a-2e3a-08de470075f6") && gcAseguradora.Id != Guid.Parse("785c723c-6f37-41ce-3eb9-08de38d1a349")) throw new ArgumentException("Aseguradora no es AIG");
             TokenValidation tokenValidation = new TokenValidation();
             tokenValidation.Type = otpRequestMessage.Type != null ? otpRequestMessage.Type : "N/A";
             tokenValidation.TokenValue = BCrypt.Net.BCrypt.HashPassword(otp);
@@ -107,11 +110,10 @@ namespace MicroservicesEcosystem.Services
             tokenValidation.Token = response.AccessToken;
             tokenValidation = await tokenValidationRepository.Update(tokenValidation);
             SendSmsMessageRequest sendSmsMessageRequest = new SendSmsMessageRequest();
-            sendSmsMessageRequest.Name = otpRequestMessage.Name;
+            sendSmsMessageRequest.Name =  otpRequestMessage.Name;
             sendSmsMessageRequest.Otp = otp;
             sendSmsMessageRequest.Dni = otpRequestMessage.Dni;
-            sendSmsMessageRequest.Broker = gcAseguradora.Name;
-            sendSmsMessageRequest.TemplateId = Guid.Parse("0c32def4-3cf1-41f5-b220-8770c3f70934");
+            sendSmsMessageRequest.Broker = otpRequestMessage.Broker == Guid.Parse("8AB0CB42-357F-4144-8E7A-39FD7423EAC7") ? "Ninguna" : gcAseguradora.Name;
             sendSmsMessageRequest.Phone = otpRequestMessage.Phone;
             sendSmsMessageRequest.Email = "";
             await mSMessagesClient.postEnvioOTPSmsMessage(sendSmsMessageRequest);
