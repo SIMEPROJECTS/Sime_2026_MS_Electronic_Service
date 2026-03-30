@@ -80,5 +80,11 @@ namespace MicroservicesEcosystem.Controllers
         {
             return await signService.SignPatientFormV2(signFormRequest);
         }
+
+        [HttpPost("sign/medicalrecord/documents/sd")]
+        public async Task<IActionResult> SignForm([FromBody] MedicalRecordDocumentRequest medicalRecordDocumentRequest)
+        {
+            return await signService.SignMedicalRecordDocumentSD(medicalRecordDocumentRequest);
+        }
     }
 }

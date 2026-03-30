@@ -9,5 +9,6 @@ namespace MicroservicesEcosystem.Services.Interfaces
         public Task<IActionResult> CreateFormDocument(DocumentRequest documentRequest);
         public Task<IActionResult> SignMedicalRecordDocument(MedicalRecordDocumentRequest documentRequest);
         public Task<IActionResult> SignPatientFormV2(SignFormRequest signFormRequest);
+        public Task<IActionResult> SignMedicalRecordDocumentSD(MedicalRecordDocumentRequest documentRequest);
     }
 }

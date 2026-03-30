@@ -110,6 +110,7 @@ namespace MicroservicesEcosystem.Services
             tokenValidation.Token = response.AccessToken;
             tokenValidation = await tokenValidationRepository.Update(tokenValidation);
             SendSmsMessageRequest sendSmsMessageRequest = new SendSmsMessageRequest();
+            sendSmsMessageRequest.TemplateId = Guid.Parse("8E40D2C4-6DFE-4A8B-B04B-E64073D44D60");
             sendSmsMessageRequest.Name =  otpRequestMessage.Name;
             sendSmsMessageRequest.Otp = otp;
             sendSmsMessageRequest.Dni = otpRequestMessage.Dni;
