@@ -112,7 +112,7 @@ namespace MicroservicesEcosystem.Services
             SendSmsMessageRequest sendSmsMessageRequest = new SendSmsMessageRequest();
             sendSmsMessageRequest.TemplateId = Guid.Parse("8E40D2C4-6DFE-4A8B-B04B-E64073D44D60");
             sendSmsMessageRequest.Name =  otpRequestMessage.Name;
-            sendSmsMessageRequest.Otp = otp;
+            sendSmsMessageRequest.Otp = otp + " - Orden: " + otpRequestMessage.OrderAttentionId;
             sendSmsMessageRequest.Dni = otpRequestMessage.Dni;
             sendSmsMessageRequest.Broker = otpRequestMessage.Broker == Guid.Parse("8AB0CB42-357F-4144-8E7A-39FD7423EAC7") ? "Ninguna" : gcAseguradora.Name;
             sendSmsMessageRequest.Phone = otpRequestMessage.Phone;
