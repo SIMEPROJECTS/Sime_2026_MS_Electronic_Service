@@ -97,7 +97,7 @@ namespace MicroservicesEcosystem.Services
                         : new() { (130f, 400f), (120f, 30f) }
                     };
 
-                    string qrContent = $"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now()} -- " + BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now()}");
+                    string qrContent = $"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now().ToString("dd/MM/yyyy")} -- " + BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {signRequest.orderAttentionId} - {LocalDateTimeNow.Now().ToString("dd/MM/yyyy")}");
 
                     byte[] pdfFirmado = SignPatient(
                         pdfBytes,
@@ -390,8 +390,8 @@ namespace MicroservicesEcosystem.Services
 
                     foreach (var sign in documentForSign.signPositions)
                     {
-                        string qrContent = $"Verificado por SIME - {DateTime.Now} -- " +
-                                           BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {DateTime.Now}");
+                        string qrContent = $"Verificado por SIME - {DateTime.Now.ToString("dd/MM/yyyy")} -- " +
+                                           BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {DateTime.Now.ToString("dd/MM/yyyy")}");
 
                         pdfProcesado = SignSingle(
                             pdfProcesado,
@@ -501,8 +501,8 @@ namespace MicroservicesEcosystem.Services
 
                 foreach (var sign in signFormRequest.Document.signPositions)
                 {
-                    string qrContent = $"Verificado por SIME - {DateTime.Now} -- " +
-                                       BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {DateTime.Now}");
+                    string qrContent = $"Verificado por SIME - {DateTime.Now.ToString("dd/MM/yyyy")} -- " +
+                                       BCrypt.Net.BCrypt.HashPassword($"Verificado por SIME - {DateTime.Now.ToString("dd/MM/yyyy")}");
 
                     pdfProcesado = SignSingle(
                         pdfProcesado,
