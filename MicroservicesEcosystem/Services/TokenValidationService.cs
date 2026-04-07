@@ -22,14 +22,16 @@ namespace MicroservicesEcosystem.Services
         private readonly IMSMessagesClient mSMessagesClient;
         private readonly IJwtAuthenticationManager jwtAuthenticationManager;
         private readonly IMSBusinessClient mSBusinessClient;
+        private readonly IMSMedicalRecordClient mMSMedicalRecordClient;
         public TokenValidationService(ITokenValidationRepository tokenValidationRepository, IConfiguration configuration, IMSMessagesClient mSMessagesClient,
-            IJwtAuthenticationManager jwtAuthenticationManager, IMSBusinessClient mSBusinessClient)
+            IJwtAuthenticationManager jwtAuthenticationManager, IMSBusinessClient mSBusinessClient, IMSMedicalRecordClient mMSMedicalRecordClient)
         {
             this.tokenValidationRepository = tokenValidationRepository;
             this.configuration = configuration;
             this.mSMessagesClient = mSMessagesClient;
             this.jwtAuthenticationManager = jwtAuthenticationManager;
             this.mSBusinessClient = mSBusinessClient;
+            this.mMSMedicalRecordClient = mMSMedicalRecordClient;
         }
         public async Task<IActionResult> PostOTPPortal(OtpRequestEmailSmsMessage otpRequestMessage)
         {
@@ -270,6 +272,7 @@ namespace MicroservicesEcosystem.Services
                         tokenValidation.Status = TypeStatus.USADO.ToString();
                         tokenValidation.UpdatedAt = DateTime.Now;
                         tokenValidation = await tokenValidationRepository.Update(tokenValidation);
+                        await mMSMedicalRecordClient.PostTimeLogs(new Models.DTOs.TimeLogsRequest { OrderAttentionCode = tokenValidation.MsMedicalRecordOrderAttentionCode ?? 0, Type = TypeStatus.CONSULTA.ToString() });
                     }
           
                         return await Task.FromResult(new OkObjectResult(new { Status = TypeStatus.SUCCESS.ToString() }));

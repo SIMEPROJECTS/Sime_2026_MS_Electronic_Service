@@ -14,6 +14,7 @@
   "MS_Internal": {
     "CUriMessages": "http://messages.ironsale",
     "CUriBusiness": "http://business.ironsale",
-    "CUriIdentity": "http://identity.ironsale"
+    "CUriIdentity": "http://identity.ironsale",
+    "CUriMedicalRecord": "http://medicalrecord.ironsale"
   }
 }

@@ -17,7 +17,8 @@ namespace MicroservicesEcosystem.Types
         SIMPLE,
         SIGN,
         ACTIVO,
-        INACTIVO
+        INACTIVO,
+        CONSULTA
 
 
     }
